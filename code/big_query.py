@@ -4,11 +4,20 @@ import requests
 from google.cloud import bigquery
 from google.api_core.exceptions import NotFound
 import time
+from dotenv import load_dotenv
+
+# load env variables
+load_dotenv()
+grant_type= os.getenv("grant_type")
+client_id=os.getenv("client_id")
+client_secret=os.getenv("client_secret")
+base_url = os.getenv("base_url")
+token_url = os.getenv("token_url")
+key_path=os.getenv('key_path')
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = key_path
 
 start = time.time()
-
-key_path = "/home/elkharroubi/My_data/projects/Hicham_script/data/sa_key.json"
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = key_path
 
 client = bigquery.Client()
 
