@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 logging.basicConfig(filename='../logs/bigquery_execution.log', 
                     encoding='utf-8',
-                      level=logging.DEBUG,
+                      level=logging.INFO,
                       format='%(asctime)s - %(levelname)s - %(message)s',
                       datefmt='%Y-%m-%d %H:%M:%S'
                       )
@@ -30,12 +30,12 @@ dataset_id = "db_raw_irn_71774_cvb"
 table_id = "cvb_css_virtuel_key"
 filters = [
     "vkEcuMgt",
-    #"popTokenReques",
-    #"SpCmdSend",
-    #"SpCmdRsp",
-    #"SpCmdFail",
-    #"SpNewRightError",
-    #"SpNewRightGranted"
+    "popTokenReques",
+    "SpCmdSend",
+    "SpCmdRsp",
+    "SpCmdFail",
+    "SpNewRightError",
+    "SpNewRightGranted"
     ]
 schema = [
     bigquery.SchemaField("creationDate", "TIMESTAMP"),
@@ -65,7 +65,7 @@ def get_api():
     return base_url,headers
 def get_data(filters):
     data_to_insert=[]
-    print('getting API CREED ...')
+    logging.info('Getting API CREED ...')
     base_url,headers=get_api()
 
     for filter_type in filters:
@@ -84,27 +84,22 @@ def get_data(filters):
                     vkecu_id = attributes["vkecuId"]
                     log_type = attributes["type"]
                 except KeyError as e:
-                    print(f"KeyError: {e}")
+                    logging.error(f"KeyError: {e}")
                 parameters = attributes.get("parameters", {})
                 parameters=str(parameters)
                 row = (creation_date, collection_date, producer, vkecu_id, log_type,parameters)
                 data_to_insert.append(row)
         except requests.exceptions.RequestException as e:
-            print("Request Exception:", e)
-            return []
+            logging.error("Request Exception {} .".format(e))
         except ValueError as e:
-            print("JSON Parsing Exception:", e)
-            return []
+            logging.error("JSON Parsing Exception {} .".format(e))
+
         except Exception as e:
-            print("An unexpected exception occurred:", e)
-            return []
+            logging.error("An unexpected exception occurred {} .".format(e))
+    logging.info('Total of records retreived : {}'.format(len(data_to_insert))) 
     return data_to_insert
-def delete_create_table(project_id,dataset_id,table_id,schema,wait_timeout=300):
-    start = time.time()
-    logging.info("Instantiate BigQuery client instance")
-    client = bigquery.Client(project=project_id)
+def delete_create_table(client,table_ref,schema,wait_timeout=300):
     logging.info("Attempt to delete the table if it exists.")
-    table_ref = client.dataset(dataset_id).table(table_id)
     try:
         client.delete_table(table_ref)
         logging.info(f"Table '{table_id}' deleted.")
@@ -118,7 +113,7 @@ def delete_create_table(project_id,dataset_id,table_id,schema,wait_timeout=300):
         logging.info(f"Table '{table_id}' created.")
     except Conflict as e:
         logging.error("Table {} can't not be created du to the conflict - {} ".format(table_id,e))
-    return table_ref,client,table
+    return table
 
 def insertion_available(table_ref,client):
     logging.info("Start time for retreiving table and insertion.")
@@ -168,7 +163,11 @@ def insert_data(table,client,data,wait_timeout=300):
             return False
 
 if __name__=="__main__":
-    table_ref,client,table=delete_create_table(project_id,dataset_id,table_id,schema,wait_timeout=300)
+    logging.info("\n---------------Start---------------\n")
+    client = bigquery.Client(project=project_id)
+    table_ref = client.dataset(dataset_id).table(table_id)
+
+    table=delete_create_table(client,table_ref,schema,wait_timeout=300)
     is_available=insertion_available(table_ref,client)
     if is_available:
         data=get_data(filters)
