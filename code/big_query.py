@@ -6,15 +6,18 @@ from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 from google.cloud.exceptions import Conflict
 import time
-import logging
-from logger.handlers import TimedRotatingFileHandler
+
+from logging.handlers import TimedRotatingFileHandler
 from logging import handlers
 from dotenv import load_dotenv
 
+if len(sys.argv)==1:
+    raise Exception('Log directory is missing .')
 
 log_directory=sys.argv[1]
-log_filename = "extract_ingest_bigquery_"
+
 def setup_logger():
+    log_filename = "extract_ingest_bigquery_"
     logger = logger.getLogger(__name__)
     logger.setLevel(logger.INFO)
     file_handler = TimedRotatingFileHandler(os.path.join(log_directory, log_filename), when='midnight',
