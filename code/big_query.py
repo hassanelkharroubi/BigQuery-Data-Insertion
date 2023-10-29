@@ -8,9 +8,8 @@ from google.cloud.exceptions import Conflict
 import time
 
 from logging.handlers import TimedRotatingFileHandler
-from logging import handlers
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 if len(sys.argv)==1:
     raise Exception('Log directory is missing .')
 
@@ -32,7 +31,7 @@ def setup_logger():
 
 logger=setup_logger()
 # load env variables
-logger.info("Import ENV variables")
+
 load_dotenv()
 grant_type= os.getenv("grant_type")
 client_id=os.getenv("client_id")
